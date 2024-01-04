@@ -1,0 +1,7 @@
+*~
+.gradle
+build
+*.hold
+\#*
+bot-token.txt
+.\#*
