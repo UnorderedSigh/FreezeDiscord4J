@@ -34,8 +34,8 @@ public class Simple {
         }
         DiscordClient.create(token).gateway()
             .withGateway(client -> client.on(ReadyEvent.class)
-                        .doOnNext(ready -> withGatewayClient(client))
-                        .doOnError(error -> LOGGER.error("gateway error: ", error)))
+                         .flatMap(x -> withGatewayClient(client))
+                         .doOnError(error -> LOGGER.error("gateway error: ", error)))
             .doOnError(error -> {
                     LOGGER.error("bot error: ", error);
                     System.exit(1);
@@ -73,7 +73,7 @@ public class Simple {
         }
     }
 
-    private static void withGatewayClient(GatewayDiscordClient gateway) {
+    private static Mono<Void> withGatewayClient(GatewayDiscordClient gateway) {
         final RestClient restClient = gateway.getRestClient();
         final ApplicationService applicationService = restClient.getApplicationService();
         final long applicationId = restClient.getApplicationId().block();
@@ -90,7 +90,7 @@ public class Simple {
             .then()
             .block();
 
-        gateway
+        return gateway
             .on(ChatInputInteractionEvent.class, event -> handleChatCommand(event))
             .onErrorResume(e -> {
                     LOGGER.error("error in chat interaction event", e);
@@ -101,11 +101,6 @@ public class Simple {
                     LOGGER.error("error in button interaction event", e);
                     return Mono.empty();
                 }))
-            .onErrorResume(e -> {
-                    LOGGER.error("error in merged chat+button interaction flux", e);
-                    return Mono.empty();
-                })
-            .then(gateway.onDisconnect())
-            .block();
+            .then();
     }
 }
