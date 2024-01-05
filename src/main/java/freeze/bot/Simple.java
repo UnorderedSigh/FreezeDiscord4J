@@ -90,17 +90,8 @@ public class Simple {
             .then()
             .block();
 
-        return gateway
-            .on(ChatInputInteractionEvent.class, event -> handleChatCommand(event))
-            .onErrorResume(e -> {
-                    LOGGER.error("error in chat interaction event", e);
-                    return Mono.empty();
-                })
-            .mergeWith(gateway.on(ButtonInteractionEvent.class, event -> handleButtonInteraction(event))
-            .onErrorResume(e -> {
-                    LOGGER.error("error in button interaction event", e);
-                    return Mono.empty();
-                }))
-            .then();
+        return Mono.when(
+            gateway.on(ChatInputInteractionEvent.class, event -> handleChatCommand(event)),
+            gateway.on(ButtonInteractionEvent.class, event -> handleButtonInteraction(event)));
     }
 }
